@@ -6,9 +6,9 @@ import { useGameLoop } from './useGameLoop';
 import { useKeyPress } from './useKeyPress';
 
 const keyDirections: { [key: string]: Vector3 } = {
-  w: new Vector3(0, 1, 0),
+  w: new Vector3(0, 0, -1),
   a: new Vector3(-1, 0, 0),
-  s: new Vector3(0, -1, 0),
+  s: new Vector3(0, 0, 1),
   d: new Vector3(1, 0, 0),
 };
 
@@ -35,8 +35,8 @@ export function Player(): React.ReactElement {
   });
 
   return (
-    <Sphere ref={ref}>
-      <meshBasicMaterial attach="material" color="hotpink" />
+    <Sphere ref={ref} position={[0, 1, 0]}>
+      <meshBasicMaterial attach="material" color="cyan" />
     </Sphere>
   );
 }

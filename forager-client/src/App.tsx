@@ -6,7 +6,7 @@ import { useWindowSize } from './useWindowSize';
 
 export function App(): React.ReactElement {
   const [width, height] = useWindowSize();
-  const [cameraZoom] = React.useState(10);
+  const [cameraZoom] = React.useState(15);
 
   return (
     <div
@@ -19,13 +19,12 @@ export function App(): React.ReactElement {
     >
       <Canvas
         camera={{
-          position: [32, 32, 32],
+          position: [0, 100, 100],
           zoom: cameraZoom,
           near: 0.01,
           far: 300,
-          rotation: [45, 45, 45],
         }}
-        // orthographic
+        orthographic
         noEvents
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -34,7 +33,10 @@ export function App(): React.ReactElement {
         onContextMenu={(e) => e.preventDefault()}
       >
         <Game />
-        <gridHelper />
+        <gridHelper
+          args={[100, 50, 'blue', 'hotpink']}
+          rotation={[0, Math.PI / 4, 0]}
+        />
       </Canvas>
     </div>
   );
