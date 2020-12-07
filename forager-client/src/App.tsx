@@ -1,43 +1,41 @@
 import React from 'react';
+import { Canvas } from 'react-three-fiber';
+import { Game } from './Game';
 
-import AssetLoader from './@core/AssetLoader';
-import Game from './@core/Game';
-import Scene from './@core/Scene';
-import SceneManager from './@core/SceneManager';
-import useWindowSize from './@core/useWindowSize';
-import OfficeScene from './scenes/OfficeScene';
-import OtherScene from './scenes/OtherScene';
-import soundData from './soundData';
-import spriteData from './spriteData';
-
-function isString(s: unknown): s is string {
-  return typeof s === 'string';
-}
-
-const urls = [
-  ...Object.values(spriteData).map((data) => data.src),
-  ...Object.values(soundData).map((data) => data.src),
-]
-  .flat()
-  .filter(isString);
+import { useWindowSize } from './useWindowSize';
 
 export function App(): React.ReactElement {
   const [width, height] = useWindowSize();
+  const [cameraZoom] = React.useState(10);
 
   return (
-    <div style={{ width, height }}>
-      <Game cameraZoom={80}>
-        <AssetLoader urls={urls} placeholder="Loading assets ...">
-          <SceneManager defaultScene="office">
-            <Scene id="office">
-              <OfficeScene />
-            </Scene>
-            <Scene id="other">
-              <OtherScene />
-            </Scene>
-          </SceneManager>
-        </AssetLoader>
-      </Game>
+    <div
+      style={{
+        position: 'relative',
+        userSelect: 'none',
+        width,
+        height,
+      }}
+    >
+      <Canvas
+        camera={{
+          position: [32, 32, 32],
+          zoom: cameraZoom,
+          near: 0.01,
+          far: 300,
+          rotation: [45, 45, 45],
+        }}
+        // orthographic
+        noEvents
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        gl2="true"
+        gl={{ antialias: true }}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <Game />
+        <gridHelper />
+      </Canvas>
     </div>
   );
 }
