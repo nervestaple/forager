@@ -1,5 +1,6 @@
 import { Room, Client } from 'colyseus';
 
+import { PLAYER_INPUT } from '../../forager-client/src/constants';
 import { Entity } from './Entity';
 import { State } from './State';
 
@@ -29,6 +30,10 @@ export class WorldRoom extends Room<State> {
     });
 
     this.setSimulationInterval(() => this.state.update());
+
+    this.onMessage(PLAYER_INPUT, (client, vector) => {
+      console.log(this.state.entities, vector);
+    });
   }
 
   onJoin(client: Client, options: unknown): void {

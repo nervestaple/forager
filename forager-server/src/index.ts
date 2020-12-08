@@ -14,7 +14,7 @@ app.use(express.json());
 const gameServer = new Server({
   server: createServer(app),
 });
-gameServer.define('arena', WorldRoom);
+gameServer.define('world', WorldRoom);
 
 const auth = basicAuth({ users: { admin: 'admin' }, challenge: true });
 app.use('/colyseus', auth, monitor());
