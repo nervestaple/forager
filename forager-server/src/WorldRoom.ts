@@ -1,8 +1,8 @@
 import { Room, Client } from 'colyseus';
 
-import { PLAYER_INPUT } from '../../forager-client/src/constants';
+import { PLAYER_INPUT } from './constants';
 import { Entity } from './Entity';
-import { isPlayer, Player } from './Player';
+import { isPlayer } from './Player';
 import { State } from './State';
 import { Vector3 } from './Vector3';
 

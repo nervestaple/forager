@@ -2,10 +2,11 @@ import { Sphere } from 'drei';
 import React from 'react';
 import { Mesh, Vector3 } from 'three';
 import * as Colyseus from 'colyseus.js';
+import { PLAYER_INPUT } from 'forager-server/src/constants';
+import { State } from 'forager-server/src/State';
 
 import { useGameLoop } from './useGameLoop';
 import { useKeyPress } from './useKeyPress';
-import { PLAYER_INPUT } from './constants';
 
 const client = new Colyseus.Client('ws://localhost:4000');
 
@@ -16,15 +17,49 @@ const keyDirections: { [key: string]: Vector3 } = {
   d: new Vector3(1, 0, 0),
 };
 
-export function Player(): React.ReactElement {
+export function Player(): React.ReactElement | null {
   const ref = React.useRef<Mesh>(null);
 
   const room = useRoom();
+  const playerId = usePlayerId(room);
+  usePlayerInput(room, playerId);
+  console.log({ playerId });
 
+  if (!playerId) {
+    return null;
+  }
+
+  return (
+    <Sphere ref={ref} position={[0, 1, 0]}>
+      <meshBasicMaterial attach="material" color="cyan" />
+    </Sphere>
+  );
+}
+
+function usePlayerId(room: Colyseus.Room<State> | null): string | null {
+  const [id, setId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!room) {
+      return;
+    }
+    room.state.entities.onAdd = (item, key) => {
+      console.log('onAdd', { item, key });
+      setId(key);
+    };
+  }, [room]);
+
+  return id;
+}
+
+function usePlayerInput(
+  room: Colyseus.Room | null,
+  playerId: string | null,
+): void {
   const keys = useKeyPress();
 
   useGameLoop(() => {
-    if (!ref.current || !room) {
+    if (!room || !playerId) {
       return;
     }
 
@@ -37,15 +72,7 @@ export function Player(): React.ReactElement {
     if (inputDirection.lengthSq() > 0) {
       room.send(PLAYER_INPUT, inputDirection);
     }
-
-    ref.current.position.addVectors(ref.current.position, inputDirection);
   });
-
-  return (
-    <Sphere ref={ref} position={[0, 1, 0]}>
-      <meshBasicMaterial attach="material" color="cyan" />
-    </Sphere>
-  );
 }
 
 function useRoom(): Colyseus.Room | null {
