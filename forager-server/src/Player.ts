@@ -1,9 +1,13 @@
+import { type } from '@colyseus/schema';
+
 import { Entity } from './Entity';
-import { DEFAULT_PLAYER_RADIUS } from './State';
+import { Vector3 } from './Vector3';
 
 export class Player extends Entity {
-  constructor() {
-    super();
-    this.radius = DEFAULT_PLAYER_RADIUS;
-  }
+  isPlayer = true;
+  @type(Vector3) direction!: Vector3;
+}
+
+export function isPlayer(entity: Entity): entity is Player {
+  return (entity as Player).isPlayer;
 }

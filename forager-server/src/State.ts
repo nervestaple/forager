@@ -1,122 +1,67 @@
-import { generateId } from 'colyseus';
-import { Schema, type, MapSchema, filterChildren } from '@colyseus/schema';
+import { Schema, type, MapSchema } from '@colyseus/schema';
 
+import { isPlayer, Player } from './Player';
 import { Entity } from './Entity';
-import { Player } from './Player';
+import { Vector3 } from './Vector3';
 
-const WORLD_SIZE = 2000;
-export const DEFAULT_PLAYER_RADIUS = 10;
+const WORLD_SIZE = 200;
 
 export class State extends Schema {
   width = WORLD_SIZE;
   height = WORLD_SIZE;
 
-  @filterChildren(function (client, key: string, value: Entity, root: State) {
-    const currentPlayer = root.entities.get(client.sessionId);
-    if (currentPlayer) {
-      const a = value.x - currentPlayer.x;
-      const b = value.y - currentPlayer.y;
-
-      return Math.sqrt(a * a + b * b) <= 500;
-    } else {
-      return false;
-    }
-  })
   @type({ map: Entity })
   entities = new MapSchema<Entity>();
 
   initialize(): void {
-    // create some food entities
-    for (let i = 0; i < 20; i++) {
-      this.createFood();
-    }
-  }
-
-  createFood(): void {
-    const food = new Entity().assign({
-      x: Math.random() * this.width,
-      y: Math.random() * this.height,
-      radius: Math.max(4, Math.random() * (DEFAULT_PLAYER_RADIUS - 1)),
-    });
-    this.entities.set(generateId(), food);
+    // // create some food entities
+    // for (let i = 0; i < 20; i++) {
+    //   this.createFood();
+    // }
   }
 
   createPlayer(sessionId: string): void {
     this.entities.set(
       sessionId,
       new Player().assign({
-        x: Math.random() * this.width,
-        y: Math.random() * this.height,
+        position: new Vector3({
+          x: Math.random() * this.width,
+          y: 0,
+          z: Math.random() * this.height,
+        }),
+        direction: new Vector3({
+          x: 0,
+          y: 0,
+          z: 0,
+        }),
       }),
     );
   }
 
   update(): void {
-    const deadEntities: string[] = [];
     this.entities.forEach((entity, sessionId) => {
-      if (entity.dead) {
-        deadEntities.push(sessionId);
+      if (!isPlayer(entity)) {
+        return;
+      }
+      if (
+        entity.direction.x === 0 &&
+        entity.direction.y === 0 &&
+        entity.direction.z === 0
+      ) {
         return;
       }
 
-      if (entity.radius >= DEFAULT_PLAYER_RADIUS) {
-        this.entities.forEach((collideTestEntity, collideSessionId) => {
-          // prevent collision with itself
-          if (collideTestEntity === entity) {
-            return;
-          }
+      entity.position.assign({
+        x: entity.position.x + entity.direction.x,
+        y: entity.position.y + entity.direction.y,
+        z: entity.position.z + entity.direction.z,
+      });
 
-          if (
-            entity.radius > collideTestEntity.radius &&
-            Entity.distance(entity, collideTestEntity) <=
-              entity.radius - collideTestEntity.radius / 2
-          ) {
-            const winnerEntity: Entity = entity;
-            const loserEntity: Entity = collideTestEntity;
-            const loserEntityId: string = collideSessionId;
-
-            winnerEntity.radius += loserEntity.radius / 5;
-            loserEntity.dead = true;
-            deadEntities.push(loserEntityId);
-
-            // create a replacement food
-            if (collideTestEntity.radius < DEFAULT_PLAYER_RADIUS) {
-              this.createFood();
-            } else {
-              console.log(loserEntityId, 'has been eaten!');
-            }
-          }
-        });
-      }
-
-      if (entity.speed > 0) {
-        entity.x -= Math.cos(entity.angle) * entity.speed;
-        entity.y -= Math.sin(entity.angle) * entity.speed;
-
-        // apply boundary limits
-        if (entity.x < 0) {
-          entity.x = 0;
-        }
-        if (entity.x > WORLD_SIZE) {
-          entity.x = WORLD_SIZE;
-        }
-        if (entity.y < 0) {
-          entity.y = 0;
-        }
-        if (entity.y > WORLD_SIZE) {
-          entity.y = WORLD_SIZE;
-        }
-      } else {
-        //
-        // touch all satic entities for filtering by distance...
-        //
-        entity['$changes'].touch(0);
-      }
-    });
-
-    // delete all dead entities
-    deadEntities.forEach((entityId) => {
-      this.entities.delete(entityId);
+      entity.direction.assign({
+        x: 0,
+        y: 0,
+        z: 0,
+      });
     });
   }
 }

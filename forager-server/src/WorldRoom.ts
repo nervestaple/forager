@@ -2,38 +2,31 @@ import { Room, Client } from 'colyseus';
 
 import { PLAYER_INPUT } from '../../forager-client/src/constants';
 import { Entity } from './Entity';
+import { isPlayer, Player } from './Player';
 import { State } from './State';
-
-interface MouseMessage {
-  x: number;
-  y: number;
-}
+import { Vector3 } from './Vector3';
 
 export class WorldRoom extends Room<State> {
   onCreate(): void {
     this.setState(new State());
     this.state.initialize();
 
-    this.onMessage('mouse', (client, message: MouseMessage) => {
-      const entity = this.state.entities[client.sessionId];
-
-      // skip dead players
+    this.onMessage(PLAYER_INPUT, (client, vector) => {
+      const entity: Entity | undefined = this.state.entities[client.sessionId];
       if (!entity) {
         console.log('DEAD PLAYER ACTING...');
         return;
       }
 
-      // change angle
-      const dst = Entity.distance(entity, message as Entity);
-      entity.speed = dst < 20 ? 0 : Math.min(dst / 15, 4);
-      entity.angle = Math.atan2(entity.y - message.y, entity.x - message.x);
+      if (!isPlayer(entity)) {
+        return;
+      }
+
+      const { x, y, z } = vector;
+      entity.direction = new Vector3().assign({ x, y, z });
     });
 
     this.setSimulationInterval(() => this.state.update());
-
-    this.onMessage(PLAYER_INPUT, (client, vector) => {
-      console.log(this.state.entities, vector);
-    });
   }
 
   onJoin(client: Client, options: unknown): void {
@@ -43,11 +36,6 @@ export class WorldRoom extends Room<State> {
 
   onLeave(client: Client): void {
     console.log(client.sessionId, 'LEFT!');
-    const entity = this.state.entities[client.sessionId];
-
-    // entity may be already dead.
-    if (entity) {
-      entity.dead = true;
-    }
+    delete this.state.entities[client.sessionId];
   }
 }
