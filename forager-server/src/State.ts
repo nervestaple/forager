@@ -1,8 +1,9 @@
 import { Schema, type, MapSchema } from '@colyseus/schema';
 
-import { isPlayer, Player } from './Player';
+import { Player } from './Player';
 import { Entity } from './Entity';
-import { Vector3 } from './Vector3';
+import { Vector3Schema } from './Vector3Schema';
+import { Vector3 } from 'three';
 
 const WORLD_SIZE = 200;
 
@@ -10,58 +11,58 @@ export class State extends Schema {
   width = WORLD_SIZE;
   height = WORLD_SIZE;
 
+  @type(Player)
+  player: Player = new Player().assign({
+    position: new Vector3Schema({
+      x: 0,
+      y: 0,
+      z: 0,
+    }),
+  });
+
   @type({ map: Entity })
   entities = new MapSchema<Entity>();
 
   initialize(): void {
-    // // create some food entities
-    // for (let i = 0; i < 20; i++) {
-    //   this.createFood();
-    // }
+    // noop
   }
 
   createPlayer(sessionId: string): void {
-    this.entities.set(
-      sessionId,
-      new Player().assign({
-        position: new Vector3({
-          x: Math.random() * this.width,
-          y: 0,
-          z: Math.random() * this.height,
-        }),
-        direction: new Vector3({
-          x: 0,
-          y: 0,
-          z: 0,
-        }),
+    this.player = new Player().assign({
+      position: new Vector3Schema({
+        x: 0,
+        y: 0,
+        z: 0,
       }),
-    );
+    });
   }
 
   update(): void {
     this.entities.forEach((entity, sessionId) => {
-      if (!isPlayer(entity)) {
-        return;
-      }
-      if (
-        entity.direction.x === 0 &&
-        entity.direction.y === 0 &&
-        entity.direction.z === 0
-      ) {
-        return;
-      }
-
-      entity.position.assign({
-        x: entity.position.x + entity.direction.x,
-        y: entity.position.y + entity.direction.y,
-        z: entity.position.z + entity.direction.z,
-      });
-
-      entity.direction.assign({
-        x: 0,
-        y: 0,
-        z: 0,
-      });
+      // noop
     });
+
+    const { direction, position } = this.player;
+
+    if (
+      !direction ||
+      (direction.x === 0 && direction.y === 0 && direction.z === 0)
+    ) {
+      return;
+    }
+
+    const directionVec = new Vector3(
+      direction.x,
+      direction.y,
+      direction.z,
+    ).normalize();
+
+    position.assign({
+      x: position.x + directionVec.x,
+      y: position.y + directionVec.y,
+      z: position.z + directionVec.z,
+    });
+
+    this.player.direction = null;
   }
 }

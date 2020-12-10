@@ -6,7 +6,7 @@ import { useWindowSize } from './useWindowSize';
 
 export function App(): React.ReactElement {
   const [width, height] = useWindowSize();
-  const [cameraZoom] = React.useState(15);
+  const [cameraZoom] = React.useState(3);
 
   return (
     <div
@@ -19,10 +19,10 @@ export function App(): React.ReactElement {
     >
       <Canvas
         camera={{
-          position: [0, 100, 100],
+          position: [0, 300, 300],
           zoom: cameraZoom,
-          near: 0.01,
-          far: 300,
+          near: 0.000001,
+          far: 1000,
         }}
         orthographic
         noEvents
@@ -34,7 +34,7 @@ export function App(): React.ReactElement {
       >
         <Game />
         <gridHelper
-          args={[100, 50, 'blue', 'hotpink']}
+          args={[500, 50, 'blue', 'hotpink']}
           rotation={[0, Math.PI / 4, 0]}
         />
       </Canvas>

@@ -1,6 +1,6 @@
 import { Cone, Cylinder } from 'drei';
 import React from 'react';
-import { Vector3 } from 'three';
+import { Vector3, ShaderMaterial, Vector2 } from 'three';
 import { range } from 'lodash-es';
 
 interface Props {
@@ -13,12 +13,47 @@ const TRUNK_POS = new Vector3(0, 5, 0);
 const FOLIAGE_POS = new Vector3(0, 15, 0);
 const FOLIAGE_LEVEL = new Vector3(0, 4, 0);
 
+const uniforms = {
+  mouse: { value: new Vector2() },
+  resolution: { value: new Vector2(window.innerWidth, window.innerHeight) },
+  color: { value: new Vector3(0, 1, 0) },
+};
+
 export function Tree({
   position,
   levels,
-  scale = 1,
+  scale = 5,
 }: Props): React.ReactElement {
+  const materialRef = React.useRef<ShaderMaterial>(null);
+  const mouseRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const scaleVec = new Vector3(scale, scale, scale);
+
+  React.useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      const { x, y } = e;
+      mouseRef.current = { x, y };
+
+      if (!materialRef.current) {
+        return;
+      }
+      const { uniforms } = materialRef.current;
+      uniforms.mouse.value.x = mouseRef.current.x;
+      uniforms.mouse.value.y = mouseRef.current.y;
+    }
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  React.useEffect(() => {
+    function handleResize() {
+      uniforms.resolution.value.x = window.innerWidth;
+      uniforms.resolution.value.y = window.innerHeight;
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
+
   return (
     <>
       <Cylinder
@@ -26,7 +61,11 @@ export function Tree({
         position={position.clone().add(TRUNK_POS).multiplyScalar(scale)}
         scale={scaleVec}
       >
-        <meshBasicMaterial attach="material" color="green" />
+        <shaderMaterial
+          ref={materialRef}
+          args={[{ uniforms, fragmentShader: fragmentShader() }]}
+          transparent={true}
+        />
       </Cylinder>
       {range(levels).map((n) => (
         <Cone
@@ -39,9 +78,28 @@ export function Tree({
             .addScaledVector(FOLIAGE_LEVEL, n + 1)
             .multiplyScalar(scale)}
         >
-          <meshBasicMaterial attach="material" color="purple" />
+          <shaderMaterial
+            ref={materialRef}
+            args={[{ uniforms, fragmentShader: fragmentShader() }]}
+            transparent={true}
+          />
         </Cone>
       ))}
     </>
   );
+}
+
+function fragmentShader(): string {
+  return `
+  uniform vec2 resolution;
+  uniform vec2 mouse;
+  uniform vec3 color;
+
+  void main(){
+    vec2 flippedMouse = vec2(mouse.x, resolution.y - mouse.y);
+    float d = length((flippedMouse - gl_FragCoord.xy) / resolution.xy);
+
+    gl_FragColor = vec4(color, min(pow(d * 10., 10.) * 100., 1.));
+  }
+`;
 }

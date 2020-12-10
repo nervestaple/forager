@@ -1,1 +1,1 @@
-export const PLAYER_INPUT = 'PLAYER_INPUT';
+export const PLAYER_MOVEMENT = 'PLAYER_MOVEMENT';

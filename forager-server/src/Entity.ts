@@ -1,6 +1,10 @@
 import { Schema, type } from '@colyseus/schema';
-import { Vector3 } from './Vector3';
+import { Vector3Schema } from './Vector3Schema';
 
 export class Entity extends Schema {
-  @type(Vector3) position!: Vector3;
+  @type(Vector3Schema) position: Vector3Schema = new Vector3Schema().assign({
+    x: 0,
+    y: 0,
+    z: 0,
+  });
 }
