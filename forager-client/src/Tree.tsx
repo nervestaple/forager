@@ -16,7 +16,6 @@ const FOLIAGE_LEVEL = new Vector3(0, 4, 0);
 const uniforms = {
   mouse: { value: new Vector2() },
   resolution: { value: new Vector2(window.innerWidth, window.innerHeight) },
-  color: { value: new Vector3(0, 1, 0) },
 };
 
 export function Tree({
@@ -63,7 +62,12 @@ export function Tree({
       >
         <shaderMaterial
           ref={materialRef}
-          args={[{ uniforms, fragmentShader: fragmentShader() }]}
+          args={[
+            {
+              uniforms: { ...uniforms, color: { value: new Vector3(0, 1, 0) } },
+              fragmentShader: fragmentShader(),
+            },
+          ]}
           transparent={true}
         />
       </Cylinder>
@@ -80,7 +84,15 @@ export function Tree({
         >
           <shaderMaterial
             ref={materialRef}
-            args={[{ uniforms, fragmentShader: fragmentShader() }]}
+            args={[
+              {
+                uniforms: {
+                  ...uniforms,
+                  color: { value: new Vector3(1, 0, 1) },
+                },
+                fragmentShader: fragmentShader(),
+              },
+            ]}
             transparent={true}
           />
         </Cone>
@@ -92,14 +104,19 @@ export function Tree({
 function fragmentShader(): string {
   return `
   uniform vec2 resolution;
-  uniform vec2 mouse;
+  uniform vec2 mousePos;
+  uniform vec2 playerPos;
   uniform vec3 color;
 
   void main(){
-    vec2 flippedMouse = vec2(mouse.x, resolution.y - mouse.y);
-    float d = length((flippedMouse - gl_FragCoord.xy) / resolution.xy);
+    vec2 flippedMouse = vec2(mousePos.x, resolution.y - mousePos.y);
+    vec2 diff = flippedMouse - gl_FragCoord.xy;
+    float ratio = resolution.x / resolution.y;
+    diff.x *= ratio;
+    float d = length(diff / resolution.xy);
 
-    gl_FragColor = vec4(color, min(pow(d * 10., 10.) * 100., 1.));
+    float alpha = 
+    gl_FragColor = vec4(color, pow(d * 2., 2.) * 10.);
   }
 `;
 }
